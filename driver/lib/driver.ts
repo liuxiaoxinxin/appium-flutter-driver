@@ -68,6 +68,7 @@ class FlutterDriver extends BaseDriver<any> {
   public setValue = setValue;
   public clear = clear;
   public getScreenshot = getScreenshot;
+  public getWindowSize = () => this.proxydriver.getWindowSize();
 
   // gesture
   public click = click;
