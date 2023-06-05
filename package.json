@@ -34,7 +34,6 @@
   ],
   "scripts": {
     "prepublishOnly": "cp ../README.md ../LICENSE ./",
-    "prepare": "npm run clean && npm run build",
     "test": "echo no test",
     "build": "tsc -b",
     "clean": "rm -rf build",
