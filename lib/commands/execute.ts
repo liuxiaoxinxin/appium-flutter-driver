@@ -1,12 +1,19 @@
-import { FlutterDriver } from '../driver';
-import { longTap, scroll, scrollIntoView, scrollUntilVisible, scrollUntilTapable } from './execute/scroll';
-import { waitFor, waitForAbsent, waitForTappable } from './execute/wait';
+import { Integer } from "type-fest";
+import { FlutterDriver } from "../driver";
+import {
+  longTap,
+  scroll,
+  scrollIntoView,
+  scrollUntilVisible,
+  scrollUntilTapable,
+} from "./execute/scroll";
+import { waitFor, waitForAbsent, waitForTappable } from "./execute/wait";
 const flutterCommandRegex = /^[\s]*flutter[\s]*:(.+)/;
 
-export const execute = async function(
+export const execute = async function (
   this: FlutterDriver,
   rawCommand: string,
-  args: any[],
+  args: any[]
 ) {
   // flutter
   const matching = rawCommand.match(flutterCommandRegex);
@@ -19,9 +26,9 @@ export const execute = async function(
     case `getVMInfo`:
       return getVMInfo(this);
     case `setIsolateId`:
-      return setIsolateId(this, args[0])
+      return setIsolateId(this, args[0]);
     case `getIsolate`:
-      return getIsolate(this, args[0])
+      return getIsolate(this, args[0]);
     case `checkHealth`:
       return checkHealth(this);
     case `clearTimeline`:
@@ -62,12 +69,16 @@ export const execute = async function(
       return setTextEntryEmulation(this, args[0]);
     case `enterText`:
       return enterText(this, args[0]);
+    case `sendTextInputAction`:
+      return sendTextInputAction(this, args[0]);
     case `requestData`:
       return requestData(this, args[0]);
     case `longTap`:
       return longTap(this, args[0], args[1]);
     case `waitForFirstFrame`:
-      return waitForCondition(this, { conditionName : `FirstFrameRasterizedCondition`});
+      return waitForCondition(this, {
+        conditionName: `FirstFrameRasterizedCondition`,
+      });
     case `setFrameSync`:
       return setFrameSync(this, args[0], args[1]);
     default:
@@ -78,8 +89,8 @@ export const execute = async function(
 const checkHealth = async (self: FlutterDriver) =>
   (await self.executeElementCommand(`get_health`)).status;
 
-const getVMInfo =async (self: FlutterDriver) =>
-  (await self.executeGetVMCommand());
+const getVMInfo = async (self: FlutterDriver) =>
+  await self.executeGetVMCommand();
 
 const getRenderTree = async (self: FlutterDriver) =>
   (await self.executeElementCommand(`get_render_tree`)).tree;
@@ -87,18 +98,16 @@ const getRenderTree = async (self: FlutterDriver) =>
 const getOffset = async (
   self: FlutterDriver,
   elementBase64: string,
-  offsetType,
+  offsetType
 ) => await self.executeElementCommand(`get_offset`, elementBase64, offsetType);
 
-const waitForCondition = async (
-  self: FlutterDriver,
-  conditionName,
-) => await self.executeElementCommand(`waitForCondition`, ``, conditionName);
+const waitForCondition = async (self: FlutterDriver, conditionName) =>
+  await self.executeElementCommand(`waitForCondition`, ``, conditionName);
 
 const forceGC = async (self: FlutterDriver) => {
-  const response = await self.socket!.call(`_collectAllGarbage`, {
+  const response = (await self.socket!.call(`_collectAllGarbage`, {
     isolateId: self.socket!.isolateId,
-  }) as { type: string };
+  })) as { type: string };
   if (response.type !== `Success`) {
     throw new Error(`Could not forceGC, response was ${response}`);
   }
@@ -111,20 +120,25 @@ const setIsolateId = async (self: FlutterDriver, isolateId: string) => {
   });
 };
 
-const getIsolate = async (self: FlutterDriver, isolateId: string|undefined) => {
-  return await self.executeGetIsolateCommand(isolateId || self.socket!.isolateId);
-}
+const getIsolate = async (
+  self: FlutterDriver,
+  isolateId: string | undefined
+) => {
+  return await self.executeGetIsolateCommand(
+    isolateId || self.socket!.isolateId
+  );
+};
 
 const anyPromise = (promises: Promise<any>[]) => {
   const newArray = promises.map((p) =>
     p.then(
       (resolvedValue) => Promise.reject(resolvedValue),
-      (rejectedReason) => rejectedReason,
-    ),
+      (rejectedReason) => rejectedReason
+    )
   );
   return Promise.all(newArray).then(
     (rejectedReasons) => Promise.reject(rejectedReasons),
-    (resolvedValue) => resolvedValue,
+    (resolvedValue) => resolvedValue
   );
 };
 
@@ -144,7 +158,7 @@ const getRenderObjectDiagnostics = async (
   opts: {
     subtreeDepth: number;
     includeProperties: boolean;
-  },
+  }
 ) => {
   const { subtreeDepth = 0, includeProperties = true } = opts;
 
@@ -155,7 +169,7 @@ const getRenderObjectDiagnostics = async (
       diagnosticsType: `renderObject`,
       includeProperties,
       subtreeDepth,
-    },
+    }
   );
 };
 
@@ -176,4 +190,14 @@ const setFrameSync = async (self, bool, durationMilliseconds) =>
   });
 
 const setTextEntryEmulation = async (self: FlutterDriver, enabled: boolean) =>
-  await self.socket!.executeSocketCommand({ command: `set_text_entry_emulation`, enabled });
+  await self.socket!.executeSocketCommand({
+    command: `set_text_entry_emulation`,
+    enabled,
+  });
+
+const sendTextInputAction = async (self: FlutterDriver, action: number) => {
+  return self.socket!.executeSocketCommand({
+    command: `send_text_input_action`,
+    textInputAction: action,
+  });
+};

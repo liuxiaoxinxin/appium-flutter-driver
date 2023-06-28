@@ -58,12 +58,16 @@ const execute = async function (rawCommand, args) {
             return setTextEntryEmulation(this, args[0]);
         case `enterText`:
             return enterText(this, args[0]);
+        case `sendTextInputAction`:
+            return sendTextInputAction(this, args[0]);
         case `requestData`:
             return requestData(this, args[0]);
         case `longTap`:
             return (0, scroll_1.longTap)(this, args[0], args[1]);
         case `waitForFirstFrame`:
-            return waitForCondition(this, { conditionName: `FirstFrameRasterizedCondition` });
+            return waitForCondition(this, {
+                conditionName: `FirstFrameRasterizedCondition`,
+            });
         case `setFrameSync`:
             return setFrameSync(this, args[0], args[1]);
         default:
@@ -72,14 +76,14 @@ const execute = async function (rawCommand, args) {
 };
 exports.execute = execute;
 const checkHealth = async (self) => (await self.executeElementCommand(`get_health`)).status;
-const getVMInfo = async (self) => (await self.executeGetVMCommand());
+const getVMInfo = async (self) => await self.executeGetVMCommand();
 const getRenderTree = async (self) => (await self.executeElementCommand(`get_render_tree`)).tree;
 const getOffset = async (self, elementBase64, offsetType) => await self.executeElementCommand(`get_offset`, elementBase64, offsetType);
 const waitForCondition = async (self, conditionName) => await self.executeElementCommand(`waitForCondition`, ``, conditionName);
 const forceGC = async (self) => {
-    const response = await self.socket.call(`_collectAllGarbage`, {
+    const response = (await self.socket.call(`_collectAllGarbage`, {
         isolateId: self.socket.isolateId,
-    });
+    }));
     if (response.type !== `Success`) {
         throw new Error(`Could not forceGC, response was ${response}`);
     }
@@ -122,5 +126,14 @@ const setFrameSync = async (self, bool, durationMilliseconds) => await self.sock
     enabled: bool,
     timeout: durationMilliseconds,
 });
-const setTextEntryEmulation = async (self, enabled) => await self.socket.executeSocketCommand({ command: `set_text_entry_emulation`, enabled });
+const setTextEntryEmulation = async (self, enabled) => await self.socket.executeSocketCommand({
+    command: `set_text_entry_emulation`,
+    enabled,
+});
+const sendTextInputAction = async (self, action) => {
+    return self.socket.executeSocketCommand({
+        command: `send_text_input_action`,
+        textInputAction: action,
+    });
+};
 //# sourceMappingURL=execute.js.map
